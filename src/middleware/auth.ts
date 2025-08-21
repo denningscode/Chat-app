@@ -35,6 +35,7 @@ export const authenticateToken = async (
 
     req.user = user;
     next();
+    return;
   } catch (error) {
     return res.status(401).json({ message: 'Invalid token' });
   }
@@ -62,8 +63,10 @@ export const optionalAuth = async (
     }
 
     next();
+    return;
   } catch (error) {
     // Continue without authentication
     next();
+    return;
   }
 };
