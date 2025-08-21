@@ -41,13 +41,13 @@ export const createRoom = async (req: Request, res: Response) => {
       }
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'Room created successfully',
       data: { room }
     });
   } catch (error: any) {
-    res.status(400).json({
+    return res.status(400).json({
       success: false,
       message: error.message || 'Failed to create room'
     });
@@ -114,7 +114,7 @@ export const getRooms = async (req: Request, res: Response) => {
       }
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         rooms,
@@ -127,7 +127,7 @@ export const getRooms = async (req: Request, res: Response) => {
       }
     });
   } catch (error: any) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message || 'Failed to get rooms'
     });
@@ -172,7 +172,7 @@ export const getPublicRooms = async (req: Request, res: Response) => {
       }
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         rooms,
@@ -185,7 +185,7 @@ export const getPublicRooms = async (req: Request, res: Response) => {
       }
     });
   } catch (error: any) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message || 'Failed to get public rooms'
     });
@@ -250,13 +250,13 @@ export const joinRoom = async (req: Request, res: Response) => {
       }
     });
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Successfully joined room',
       data: { roomId: room.id }
     });
   } catch (error: any) {
-    res.status(400).json({
+    return res.status(400).json({
       success: false,
       message: error.message || 'Failed to join room'
     });
@@ -324,12 +324,12 @@ export const getRoomDetails = async (req: Request, res: Response) => {
       });
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: { room }
     });
   } catch (error: any) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message || 'Failed to get room details'
     });

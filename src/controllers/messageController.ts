@@ -57,7 +57,7 @@ export const getMessages = async (req: Request, res: Response) => {
     // Reverse messages to get chronological order
     const reversedMessages = messages.reverse();
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         messages: reversedMessages,
@@ -70,7 +70,7 @@ export const getMessages = async (req: Request, res: Response) => {
       }
     });
   } catch (error: any) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message || 'Failed to get messages'
     });
@@ -118,13 +118,13 @@ export const sendMessage = async (req: Request, res: Response) => {
       }
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'Message sent successfully',
       data: { message }
     });
   } catch (error: any) {
-    res.status(400).json({
+    return res.status(400).json({
       success: false,
       message: error.message || 'Failed to send message'
     });
@@ -200,13 +200,13 @@ export const editMessage = async (req: Request, res: Response) => {
       }
     });
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Message updated successfully',
       data: { message: updatedMessage }
     });
   } catch (error: any) {
-    res.status(400).json({
+    return res.status(400).json({
       success: false,
       message: error.message || 'Failed to edit message'
     });
@@ -256,12 +256,12 @@ export const deleteMessage = async (req: Request, res: Response) => {
       where: { id: messageId }
     });
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Message deleted successfully'
     });
   } catch (error: any) {
-    res.status(400).json({
+    return res.status(400).json({
       success: false,
       message: error.message || 'Failed to delete message'
     });

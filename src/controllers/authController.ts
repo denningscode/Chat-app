@@ -52,7 +52,7 @@ export const register = async (req: Request, res: Response) => {
       username: user.username
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'User registered successfully',
       data: {
@@ -61,7 +61,7 @@ export const register = async (req: Request, res: Response) => {
       }
     });
   } catch (error: any) {
-    res.status(400).json({
+    return res.status(400).json({
       success: false,
       message: error.message || 'Registration failed'
     });
@@ -118,7 +118,7 @@ export const login = async (req: Request, res: Response) => {
 
     const { password: _, ...userWithoutPassword } = user;
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Login successful',
       data: {
@@ -127,7 +127,7 @@ export const login = async (req: Request, res: Response) => {
       }
     });
   } catch (error: any) {
-    res.status(400).json({
+    return res.status(400).json({
       success: false,
       message: error.message || 'Login failed'
     });
@@ -158,12 +158,12 @@ export const getProfile = async (req: Request, res: Response) => {
       });
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: { user }
     });
   } catch (error: any) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message || 'Failed to get profile'
     });

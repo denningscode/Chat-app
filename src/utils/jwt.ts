@@ -15,7 +15,8 @@ export const generateToken = (payload: JWTPayload): string => {
 
 export const verifyToken = (token: string): JWTPayload => {
   try {
-    return jwt.verify(token, JWT_SECRET) as JWTPayload;
+    const decoded = jwt.verify(token, JWT_SECRET);
+    return decoded as JWTPayload;
   } catch (error) {
     throw new Error('Invalid token');
   }
@@ -23,7 +24,8 @@ export const verifyToken = (token: string): JWTPayload => {
 
 export const decodeToken = (token: string): JWTPayload | null => {
   try {
-    return jwt.decode(token) as JWTPayload;
+    const decoded = jwt.decode(token);
+    return decoded as JWTPayload;
   } catch (error) {
     return null;
   }
