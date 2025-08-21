@@ -4,7 +4,7 @@
 import jwt, { SignOptions } from "jsonwebtoken";
 
 
-const JWT_SECRET = process.env.JWT_SECRET || "ttdsjqnnwjw772h2b3233jejejejeje";
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const JWT_EXPIRES_IN: SignOptions["expiresIn"] =
   (process.env.JWT_EXPIRES_IN as unknown as SignOptions["expiresIn"]) || "7d";
