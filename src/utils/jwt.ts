@@ -35,9 +35,6 @@ export const decodeToken = (token: string): JWTPayload | null => {
 
 import jwt, { SignOptions } from "jsonwebtoken";
 
-if (!process.env.JWT_SECRET) {
-  throw new Error("JWT_SECRET must be defined");
-}
 
 const JWT_SECRET = process.env.JWT_SECRET || "lrtsdebugwiththissecret";
 
