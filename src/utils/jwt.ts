@@ -41,9 +41,8 @@ if (!process.env.JWT_SECRET) {
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-// allow string like "7d" or number of seconds
 const JWT_EXPIRES_IN: SignOptions["expiresIn"] =
-  process.env.JWT_EXPIRES_IN || "7d";
+  (process.env.JWT_EXPIRES_IN as string) || "7d";
 
 export interface JWTPayload {
   userId: string;
