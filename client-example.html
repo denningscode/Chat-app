@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App Client Example</title>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+        .auth-section, .chat-section {
+            flex: 1;
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, button {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .messages {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 8px;
+            background-color: white;
+            border-radius: 4px;
+            border-left: 3px solid #007bff;
+        }
+        .message .sender {
+            font-weight: bold;
+            color: #007bff;
+        }
+        .message .time {
+            font-size: 0.8em;
+            color: #666;
+        }
+        .status {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        .status.connected {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .typing {
+            font-style: italic;
+            color: #666;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chat App Client Example</h1>
+    
+    <div class="container">
+        <div class="auth-section">
+            <h2>Authentication</h2>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" placeholder="Enter your email">
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" placeholder="Enter your password">
+            </div>
+            <button onclick="register()">Register</button>
+            <button onclick="login()">Login</button>
+            <div id="authStatus"></div>
+        </div>
+
+        <div class="chat-section">
+            <h2>Chat</h2>
+            <div class="form-group">
+                <label for="roomId">Room ID:</label>
+                <input type="text" id="roomId" placeholder="Enter room ID">
+            </div>
+            <button onclick="joinRoom()">Join Room</button>
+            <button onclick="leaveRoom()">Leave Room</button>
+            
+            <div id="connectionStatus" class="status disconnected">Disconnected</div>
+            <div id="typingStatus" class="typing" style="display: none;"></div>
+            
+            <div id="messages" class="messages"></div>
+            
+            <div class="form-group">
+                <label for="messageInput">Message:</label>
+                <input type="text" id="messageInput" placeholder="Type your message..." onkeyup="handleTyping(event)">
+            </div>
+            <button onclick="sendMessage()">Send Message</button>
+        </div>
+    </div>
+
+    <script>
+        let socket = null;
+        let token = null;
+        let currentRoom = null;
+        let typingTimeout = null;
+
+        // Authentication functions
+        async function register() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    token = data.data.token;
+                    document.getElementById('authStatus').innerHTML = '<div class="status connected">Registered successfully!</div>';
+                    connectSocket();
+                } else {
+                    document.getElementById('authStatus').innerHTML = `<div class="status disconnected">Error: ${data.message}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('authStatus').innerHTML = `<div class="status disconnected">Error: ${error.message}</div>`;
+            }
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    token = data.data.token;
+                    document.getElementById('authStatus').innerHTML = '<div class="status connected">Logged in successfully!</div>';
+                    connectSocket();
+                } else {
+                    document.getElementById('authStatus').innerHTML = `<div class="status disconnected">Error: ${data.message}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('authStatus').innerHTML = `<div class="status disconnected">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Socket.IO functions
+        function connectSocket() {
+            if (!token) {
+                alert('Please login or register first');
+                return;
+            }
+
+            socket = io({
+                auth: {
+                    token: token
+                }
+            });
+
+            socket.on('connect', () => {
+                document.getElementById('connectionStatus').innerHTML = 'Connected to server';
+                document.getElementById('connectionStatus').className = 'status connected';
+            });
+
+            socket.on('disconnect', () => {
+                document.getElementById('connectionStatus').innerHTML = 'Disconnected from server';
+                document.getElementById('connectionStatus').className = 'status disconnected';
+            });
+
+            socket.on('joined_room', (data) => {
+                currentRoom = data.roomId;
+                addMessage('System', `Joined room: ${data.roomId}`, new Date());
+            });
+
+            socket.on('receive_message', (message) => {
+                addMessage(message.sender.username, message.content, new Date(message.createdAt));
+            });
+
+            socket.on('typing', (data) => {
+                if (data.isTyping) {
+                    document.getElementById('typingStatus').innerHTML = `${data.username} is typing...`;
+                    document.getElementById('typingStatus').style.display = 'block';
+                } else {
+                    document.getElementById('typingStatus').style.display = 'none';
+                }
+            });
+
+            socket.on('user_status', (data) => {
+                addMessage('System', `${data.username} is now ${data.isOnline ? 'online' : 'offline'}`, new Date());
+            });
+
+            socket.on('user_joined_room', (data) => {
+                addMessage('System', `${data.username} joined the room`, new Date());
+            });
+
+            socket.on('error', (data) => {
+                addMessage('Error', data.message, new Date());
+            });
+        }
+
+        function joinRoom() {
+            if (!socket) {
+                alert('Please connect to server first');
+                return;
+            }
+
+            const roomId = document.getElementById('roomId').value;
+            if (!roomId) {
+                alert('Please enter a room ID');
+                return;
+            }
+
+            socket.emit('join_room', { roomId });
+        }
+
+        function leaveRoom() {
+            if (currentRoom && socket) {
+                socket.emit('leave_room', { roomId: currentRoom });
+                currentRoom = null;
+                addMessage('System', 'Left the room', new Date());
+            }
+        }
+
+        function sendMessage() {
+            if (!socket || !currentRoom) {
+                alert('Please join a room first');
+                return;
+            }
+
+            const messageInput = document.getElementById('messageInput');
+            const content = messageInput.value.trim();
+            
+            if (!content) {
+                alert('Please enter a message');
+                return;
+            }
+
+            socket.emit('send_message', {
+                roomId: currentRoom,
+                content: content
+            });
+
+            messageInput.value = '';
+            socket.emit('typing', { roomId: currentRoom, isTyping: false });
+        }
+
+        function handleTyping(event) {
+            if (!socket || !currentRoom) return;
+
+            if (event.key === 'Enter') {
+                sendMessage();
+                return;
+            }
+
+            socket.emit('typing', { roomId: currentRoom, isTyping: true });
+
+            if (typingTimeout) {
+                clearTimeout(typingTimeout);
+            }
+
+            typingTimeout = setTimeout(() => {
+                socket.emit('typing', { roomId: currentRoom, isTyping: false });
+            }, 1000);
+        }
+
+        function addMessage(sender, content, time) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            messageDiv.innerHTML = `
+                <div class="sender">${sender}</div>
+                <div class="content">${content}</div>
+                <div class="time">${time.toLocaleTimeString()}</div>
+            `;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+    </script>
+</body>
+</html>
